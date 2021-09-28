@@ -80,3 +80,69 @@ Help rendszer frissítése.
 ### Mi a különbség a `Get-Help` és a `Get-Command` között?
 
 A `Get-Help` egy felhasználóbarát szöveg-alapú leírást ad, a `Get-Command` objektumot ad vissza, amit tovább használhatunk a logikában.
+
+## Objektumok
+
+### Property-k
+
+```ps
+Get-Service -Name w32time | Get-Member
+```
+
+A `Get-Service` egy objektumot ad át a `Get-Member`-nek, ami kilistázza az objektum adatait (pl. property-k, metódusok).
+
+Az eredmény első sorában mindig a kapott objektum típusa szerepel, ami a fenti sort lefuttatva `System.ServiceProcess.ServiceController`.
+
+```ps
+Get-Command -ParameterType ServiceController
+```
+
+Kilistázza azokat a parancsokat, melyek `ServiceController` típusú objektumot elfogad inputként.
+
+```ps
+Get-Service -Name w32time | Select-Object -Property *
+```
+
+A `Get-Member` alapértelmezetten nem listáz ki mindent, ehhez a `Select-Object`-et kell használni. A fenti sor kilistáz minden property-t.
+
+```ps
+Get-Service -Name w32time | Select-Object -Property Status, Name, DisplayName, ServiceType
+```
+
+Célzottan is ki lehet listázni property-ket.
+
+```ps
+Get-Service -Name w32time | Select-Object -Property Status, DisplayName, Can*
+```
+
+Wildcard itt is használható.
+
+### Metódusok
+
+```ps
+Get-Service -Name w32time | Get-Member -MemberType Method
+```
+
+Az objektum metódusainak listázása.
+
+```ps
+(Get-Service -Name w32time).Stop()
+```
+
+Egy objektum-metódus hívása.
+
+A metódusok hívását érdemes kerülni és inkább a natív `Ige-Főnév` alakú parancsokat használni. Előfordulhat viszont, hogy egy adott típushoz nincsen *cmdlet*, ilyenkor használjunk egy megfelelő metódust.
+
+```ps
+Get-Service -Name w32time | Start-Service -PassThru
+```
+
+Alapesetben a `Start-Service` parancs nem ad vissza semmit, viszont ez felülírható a `PassThru` paraméterrel. Ilyenkor visszaadja azt az objektumot, amit módosított. A konzolon azt kellene látnunk, hogy a service *Running* státuszban van.
+
+```ps
+Start-Service -Name w32time -PassThru | Get-Member
+```
+
+A `Get-Member` egy objektumot vár, viszont a `Start-Service` alapból nem ad vissza semmit. A `PassThru` paraméterrel itt is megoldható, hogy visszaadja az objektumot, amit elindított.
+
+**TODO**: Active Directory fejezet
