@@ -1,5 +1,5 @@
 # PowerShell Microsoft Tutorial
-[link](https://docs.microsoft.com/en-us/powershell/scripting/overview?view=powershell-7.1)
+**[link](https://docs.microsoft.com/en-us/powershell/scripting/overview?view=powershell-7.1)**
 
 ## Help System
 
@@ -145,4 +145,50 @@ Start-Service -Name w32time -PassThru | Get-Member
 
 A `Get-Member` egy objektumot vár, viszont a `Start-Service` alapból nem ad vissza semmit. A `PassThru` paraméterrel itt is megoldható, hogy visszaadja az objektumot, amit elindított.
 
-**TODO**: Active Directory fejezet
+### Active Directory
+
+```ps
+Get-Command -Module ActiveDirectory
+```
+
+Az `ActiveDirectory`-ba tartózó összes parancs kilistázása.
+
+```ps
+Get-ADUser -Identity mike | Get-Member
+```
+
+A `Get-ADUser` parancs az `ActiveDirectory` modul része. A parancs ige főnév része `AD`-val kezdődik, elkerülve az esetleges névütközéseket.
+
+Az objektumban lévő elemek csak egy részét kaptuk meg ezzel a cmdlet-el.
+
+```ps
+Get-ADUser -Identity mike -Properties * | Get-Member
+```
+
+A `Properties` paraméternek át kell adni egy wildcard-ot, ha minden elemet látni akarunk.
+
+Teljesítmény megfontolások miatt ad vissza a default beállítás korlátozott számú elemet.
+
+```ps
+$Users = Get-ADUser -Identity mike -Properties *
+```
+
+A lekérdezések eredményét változóban tárolhatjuk. A változó tartalma nem fog változni, ha valami módosult az Active Directory-ban.
+
+```ps
+$Users | Get-Member
+```
+
+A változót átadhatjuk egy cmdlet-nek.
+
+```ps
+$Users | Select-Object -Property Name, LastLogonDate, LastBadPasswordAttempt
+```
+
+A `Select-Object` cmdlet-el property-ra is szűrhetünk.
+
+```ps
+Get-ADUser -Identity mike -Properties LastLogonDate, LastBadPasswordAttempt
+```
+
+A `Get-ADUser` cmdlet-nek is megadhatjuk, hogy melyik property-kre vagyunk kíváncsiak.
