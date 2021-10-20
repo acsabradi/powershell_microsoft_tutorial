@@ -192,3 +192,15 @@ Get-ADUser -Identity mike -Properties LastLogonDate, LastBadPasswordAttempt
 ```
 
 A `Get-ADUser` cmdlet-nek is megadhatjuk, hogy melyik property-kre vagyunk kíváncsiak.
+
+## One-liner parancsok
+
+```ps
+Get-Service |
+  Where-Object CanPauseAndContinue -eq $true |
+    Select-Object -Property *
+```
+
+Lekérjük az összes service-t, majd kiszűrjük azokat, melyeknek a `CanPauseAndContinue` property-je `true`, majd kilistázuk ezen servive-ek összes property-jét.
+
+A `|` *pipe* szimbólummal adhatjuk át egy cmdlet kimenetét egy másik cmdlet bemenetére, így írható egy *one-liner* parancs. A sor a következő karaktereknél törhető: `| , [ { ( ; = ' "`
