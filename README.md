@@ -193,7 +193,9 @@ Get-ADUser -Identity mike -Properties LastLogonDate, LastBadPasswordAttempt
 
 A `Get-ADUser` cmdlet-nek is megadhatjuk, hogy melyik property-kre vagyunk kíváncsiak.
 
-## One-liner parancsok
+## Pipeline
+
+### One-liner parancsok
 
 ```ps
 Get-Service |
@@ -204,3 +206,44 @@ Get-Service |
 Lekérjük az összes service-t, majd kiszűrjük azokat, melyeknek a `CanPauseAndContinue` property-je `true`, majd kilistázuk ezen servive-ek összes property-jét.
 
 A `|` *pipe* szimbólummal adhatjuk át egy cmdlet kimenetét egy másik cmdlet bemenetére, így írható egy *one-liner* parancs. A sor a következő karaktereknél törhető: `| , [ { ( ; = ' "`
+
+```ps
+Get-Service -Name w32time |
+  Select-Object -Property *
+```
+
+`w32time` service lekérése, majd annak össze property-jének kilistázása.
+
+```ps
+$Service = 'w32time'; Get-Service -Name $Service
+```
+
+Ez nem *one-liner* parancs, hanem kettő parancs egy `;` szimbólummal elválasztva.
+
+### Bal oldalról szűrés (filtering left)
+
+```ps
+# Forrásnál szűrés
+Get-Service -Name w32time
+
+# Minden service lekérése, majd azok szűrése
+Get-Service | Where-Object Name -eq w32time
+```
+
+A két parancs ugyanazt az eredményt adja, a `w32time` service-t. Viszont az első parancs a forrásnál (balról) szűr, a második lekérdez minden service-t, majd azokat szűri név alapján, ezért az első parancs a gyorsabb.
+
+```ps
+Get-Service |
+  Select-Object -Property DisplayName, Running, Status |
+    Where-Object CanPauseAndContinue
+```
+
+Szűrésnél figyelni kell a parancsok sorrendjére. A példában lekérdezünk minden service-t, ebből vesszük azon property-ket, melyeket a `-Property` paraméternek adunk át, majd rászűrünk a `CanPauseAndContinue` property-re. Nem fogunk semmilyen eredményt se kapni, mivel mire a bemenet eléri a `Where-Object` cmdlet-et, addigra már kiszűrtük azt a property-t, amire szűrnénk ott.
+
+```ps
+Get-Service |
+  Where-Object CanPauseAndContinue |
+    Select-Object -Property DisplayName, Running, Status
+```
+
+Erre az a megoldás, hogy a két cmdlet sorrendjét felcseréljük, így már kapunk eredményt.
