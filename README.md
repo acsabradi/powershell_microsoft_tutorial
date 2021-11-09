@@ -193,7 +193,7 @@ Get-ADUser -Identity mike -Properties LastLogonDate, LastBadPasswordAttempt
 
 A `Get-ADUser` cmdlet-nek is megadhatjuk, hogy melyik property-kre vagyunk kíváncsiak.
 
-## Pipeline
+## Pipeline használata
 
 ### One-liner parancsok
 
@@ -247,3 +247,102 @@ Get-Service |
 ```
 
 Erre az a megoldás, hogy a két cmdlet sorrendjét felcseréljük, így már kapunk eredményt.
+
+### Pipeline
+
+```ps
+help Stop-Service -Full
+
+# Az output egy részlete
+
+INPUTS
+    System.ServiceProcess.ServiceController, System.String
+        You can pipe a service object or a string that contains the name of a service
+        to this cmdlet.
+```
+
+A *help* szerint a `Stop-Service` cmdlet egy `String` vagy `ServiceController` objektumot képes fogadni egy pipeline-ban. Ahhoz, hogy megtudjuk, pontosan melyik paraméter fogadja ezeket a bemeneteket, át kell nézni a paraméterek leírásait a *help*-ben:
+
+```ps
+-DisplayName <String[]>
+    Specifies the display names of the services to stop. Wildcard characters are
+    permitted.
+
+    Required?                    true
+    Position?                    named
+    Default value                None
+    Accept pipeline input?       False
+    Accept wildcard characters?  false
+
+-InputObject <ServiceController[]>
+    Specifies ServiceController objects that represent the services to stop. Enter a
+    variable that contains the objects, or type a command or expression that gets the
+    objects.
+
+    Required?                    true
+    Position?                    0
+    Default value                None
+    Accept pipeline input?       True (ByValue)
+    Accept wildcard characters?  false
+
+-Name <String[]>
+    Specifies the service names of the services to stop. Wildcard characters are
+    permitted.
+
+    Required?                    true
+    Position?                    0
+    Default value                None
+    Accept pipeline input?       True (ByPropertyName, ByValue)
+    Accept wildcard characters?  false
+```
+
+A `DisplayName` paraméter nem fogad el input-ot pipeline-ból, az `InputObject` elfogad `ServiceController` input-ot a pipeline-ból *ByValue* (érték szerint), a `Name` bemenet `String`-et fogad el *ByValue* és *ByPropertyName* (property név szerint). Ha a paraméter kétféleképp fogad el bemenetet, akkor mindig a *ByValue*-val fog először próbálkozni.
+
+A *ByValue* azt jelenti, hogy ha egy `ServiceController` objektumot adok át a `Stop-Service` cmdlet-nek a pipeline-ban, akkor az az `InputObject` paraméter bemenete lesz. Ugyanez igaz egy `String` bemenetre és a `Name` paraméterre.
+
+A *ByPropertyName* annyit tesz, hogy ha egy olyan tetszőleges objektumot adok át, ami tartalmaz egy `Name` property-t, akkor annak értéke lesz a `Name` paraméter bemenete.
+
+```ps
+Get-Service -Name w32time | Stop-Service
+```
+
+Mivel a `Get-Service` kimenete egy `ServiceController`, ezért az a pipeline-ban továbbadható a `Stop-Service`-nek, és így az `InputObject` bemenete lesz *ByValue*.
+
+```ps
+'w32time' | Stop-Service
+```
+
+A `Name` paraméternek adunk bemenetet *ByValue*.
+
+```ps
+$CustomObject = [pscustomobject]@{
+	Name = 'w32time'
+}
+
+$CustomObject | Stop-Service
+```
+
+Egy általunk létrehozott objektumot adunk a `Stop-Service` bemenetére, így a `Name` paramétert hajtjuk meg *ByPropertyName*.
+
+Ha az objektumban nem lenne `Name` property, akkor hibát kapnánk a pipeline futtatásakor. Ilyen esetben átalakíthatjuk a bemenetet úgy, hogy azt már elfogadja a `Stop-Service`:
+
+```ps
+$CustomObject = [pscustomobject]@{
+  	Service = 'w32time'
+}
+
+$CustomObject |
+  	Select-Object -Property @{name='Name';expression={$_.Service}} |
+    	Stop-Service
+```
+
+Egyéb módon is lehet input-ot adni egy paraméterre:
+
+```ps
+'Background Intelligent Transfer Service', 'Windows Time' |
+	Out-File -FilePath $env:TEMP\services.txt
+	
+Stop-Service -DisplayName (Get-Content -Path $env:TEMP\services.txt)
+```
+
+Először egy fájlba kiírjuk azokat a service-eket, melyeket le akarunk állítani, majd ugyanezt a fájlt beolvassuk, mikor át kell adni input-ot a `DisplayName` paraméternek.
