@@ -263,7 +263,7 @@ INPUTS
 
 A *help* szerint a `Stop-Service` cmdlet egy `String` vagy `ServiceController` objektumot képes fogadni egy pipeline-ban. Ahhoz, hogy megtudjuk, pontosan melyik paraméter fogadja ezeket a bemeneteket, át kell nézni a paraméterek leírásait a *help*-ben:
 
-```ps
+```
 -DisplayName <String[]>
     Specifies the display names of the services to stop. Wildcard characters are
     permitted.
