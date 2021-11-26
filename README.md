@@ -346,3 +346,144 @@ Stop-Service -DisplayName (Get-Content -Path $env:TEMP\services.txt)
 ```
 
 Először egy fájlba kiírjuk azokat a service-eket, melyeket le akarunk állítani, majd ugyanezt a fájlt beolvassuk, mikor át kell adni input-ot a `DisplayName` paraméternek.
+
+## Formázás, alias, provider és összehasonlítás
+
+### Cmdlet output-jának formázása
+
+Legtöbbször használt formázó cmdlet-ek:
+- `Format-Table`
+- `Format-List`
+- `Format-Wide`
+- `Format-Custom`
+
+```ps
+Get-Service -Name w32time | Select-Object -Property Status, DisplayName, Can*
+```
+
+Egy olyan cmdlet kimenetnél, ahol több, mint 4 property-vel térünk vissza, akkor a kimenet lista lesz *by default*.
+
+```ps
+Get-Service -Name w32time | Select-Object -Property Status, DisplayName, Can* |
+Format-Table
+```
+
+A `Format-Table` cmdlet-el felülírhatjuk ezt és táblázat kimenetet kaphatunk.
+
+```ps
+Get-Service -Name w32time
+```
+
+Ez a cmdlet 3 property-t ad vissza, így a kimenet táblázat lesz.
+
+```ps
+Get-Service -Name w32time | Format-List
+```
+
+Az előző példához hasonlóan listává formázható a kimenet. A `Get-Service` esetébe a default kimenet formátum megváltoztatásával a visszaadott property-k száma is több lett, viszont ez nem általános, hanem a cmdlet működéséből fakad.
+
+A formázó cmdlet-ek a saját objektumaikat adják vissza, nem a szokásos PowerShell objektumokat. Tehát a kimenetei legtöbbször nem adhatók tovább a pipeline-ban. Erre kivétel néhány `Out-*` cmdlet (pl. fájlba kiírás). Ezért tanácsos a formázást a pipeline legvégén elvégezni.
+
+### Alias
+
+Az alias-ok a cmdlet-ek rövidítései.
+
+```ps
+Get-Alias -Definition Get-Command, Get-Member
+```
+
+Alias-ok lekérése a `Get-Command` és a `Get-Member` cmdlet-ekhez.
+
+```ps
+Get-Alias -Name gcm
+```
+
+A `gcm` alias-hoz társított cmdlet lekérése
+
+> Alias-ok használata csak lokálisan, egy-egy parancs kiadására ajánlatos, script-eknél kerülni kell!
+
+### Provider-ek
+
+A provider-ek olyan interfészek, melyek fájlrendszer jellegű hozzáférést biztosítanak adattároló elemekhez (pl. regiszter, certificate-ek).
+
+```ps
+Get-PSProvider
+```
+
+A provider-ek kilistázása. Mindegyik tartozik legalább egy drive, amin keresztül hozzájuk tudunk férni.
+
+```ps
+Get-PSDrive
+```
+
+A provider-ek drive-jainak kilistázása.
+
+```ps
+Get-ChildItem -Path Cert:\LocalMachine\CA
+```
+
+A provider drive-hoz úgy tudunk hozzáférni, mint egy fájlrendszerhez.
+
+### Összehasonlító operátorok
+
+Értékeket komparálunk vagy mintát keresünk velük.
+
+> *[Dokumentációhoz link](https://docs.microsoft.com/en-us/powershell/scripting/learn/ps101/05-formatting-aliases-providers-comparison?view=powershell-7.2#comparison-operators)*
+> - `-eq`: Equal to
+> - `-ne`: Not equal to
+> - `-gt`: Greater than
+> - `-ge`: Greater than or equal to
+> - `-lt`: Less than
+> - `-le`: Less than or equal to
+> - `-Like`: Match using the * wildcard character
+> - `-NotLike`: Does not match using the * wildcard character
+> - `-Match`: Matches the specified regular expression
+> - `-NotMatch`: Does not match the specified regular expression
+> - `-Contains`: Determines if a collection contains a specified value
+> - `-NotContains`: Determines if a collection does not contain a specific value
+> - `-In`: Determines if a specified value is in a collection
+> - `-NotIn`: Determines if a specified value is not in a collection
+> - `-Replace`: Replaces the specified value
+
+Ezek az operátorok case-insensitive-ek. Úgy lehet case-sensitive-é tenni őket, hogy egy `c` prefixet teszünk eléjük. Pl. `-eq` => `-ceq` 
+
+Néhány példa:
+
+```ps
+'PowerShell' -eq 'powershell'   #True
+'PowerShell' -ceq 'powershell'  #False
+5 -ge 5                         #True
+5 -lt 10                        #True
+```
+
+A `-Like` operátornál csak a `*` és `?` wildcard karakterek használhatók, a `-Match`-nél viszont teljes regex kifejezést kell megadni:
+
+```ps
+'PowerShell' -like '*shell'     #True
+'PowerShell' -match '^*.shell$' #True
+```
+
+```ps
+$Numbers = 1..10  #Számok letárolása 1-től 10-ig
+
+$Numbers -contains 15           #False
+$Numbers -contains 10           #True
+$Numbers -notcontains 15        #True
+15 -in $Numbers                 #False
+10 -notin $Numbers              #False
+```
+
+```ps
+'PowerShell' -replace 'Shell' #Power
+'SQL Saturday' -replace 'saturday','Sat' #SQL Sat
+```
+
+Kicserélésnél lehetséges metódust is hívni, viszont az case-sensitive lesz:
+
+```ps
+'SQL Saturday'.Replace('Saturday','Sat') #SQL Sat
+```
+
+Operátorok használata általában ajánlatosabb, mint a metódusoké.
+
+Az operátorokat sokszor használjuk a `Where-Object` feltételénél.
